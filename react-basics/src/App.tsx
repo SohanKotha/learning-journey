@@ -1,5 +1,5 @@
 
-import Header from "./components/header";
+import Header from "./components/Header";
 import ExpenseCard from "./components/ExpenseCard";
 import Counter from "./components/Counter";
 
@@ -11,7 +11,9 @@ function App() {
             <p>Starting React with TypeScript</p>
 
             <ExpenseCard title="Groceries" amount={50} category="Food" />
+
             <ExpenseCard title="Uber" amount={20} category="Travel" />
+
             <ExpenseCard title="Pizza" amount={15} category="Food" note="Dinner" />
 
             <Counter />

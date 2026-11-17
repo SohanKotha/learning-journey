@@ -1,14 +1,14 @@
-
 import { useState } from "react";
 import type { Expense } from "./type";
 
 import Header from "./components/Header";
 import ExpenseCard from "./components/ExpenseCard";
 import Counter from "./components/Counter";
+import UserList from "./components/UserList";
+import Clock from "./components/Clock";
 
 function App() {
 
-    // keeping expenses in state
     const [expenses, setExpenses] = useState<Expense[]>([
         { id: 1, title: "Groceries", amount: 50, category: "Food" },
         { id: 2, title: "Uber", amount: 20, category: "Travel" },
@@ -18,17 +18,16 @@ function App() {
         { id: 6, title: "Jacket", amount: 120, category: "Shopping" }
     ]);
 
-    // selected category
     const [selectedCategory, setSelectedCategory] = useState("All");
 
-    // deleting an expense
+    // removing expense
     const deleteExpense = (id: number) => {
         setExpenses((current) =>
             current.filter((e) => e.id !== id)
         );
     };
 
-    // updating an expense
+    // updating expense
     const updateExpense = (id: number) => {
 
         const expense = expenses.find((e) => e.id === id);
@@ -59,10 +58,10 @@ function App() {
         );
     };
 
-    // total of all expenses
+    // total expenses
     const total = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // filtering based on category
+    // filtering categories
     const filteredExpenses = selectedCategory === "All"
         ? expenses
         : expenses.filter((e) => e.category === selectedCategory);
@@ -72,6 +71,10 @@ function App() {
             <Header title="My Expense Tracker" />
 
             <p>Starting React with TypeScript</p>
+
+            <Clock />
+
+            <UserList />
 
             <h2>Total Expenses: ${total}</h2>
 
@@ -96,7 +99,7 @@ function App() {
             {filteredExpenses.length === 0 ? (
                 <p>
                     {expenses.length === 0
-                        ? "No expenses yet"
+                        ? "No expenses yet 🎉"
                         : "No expenses in this category"}
                 </p>
             ) : (

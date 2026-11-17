@@ -72,9 +72,6 @@ FROM employees
 WHERE role = 'Engineer';
 
 
-
--- bhanu interview sql question
-
 -- employees count by state
 SELECT l.state, COUNT(*) AS employee_count
 FROM employee e

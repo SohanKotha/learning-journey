@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, Routes, Route } from "react-router";
 import type { Expense } from "./type";
 
 import Header from "./components/Header";
@@ -10,7 +11,6 @@ import Clock from "./components/Clock";
 
 function App() {
 
-    // expenses data
     const [expenses, setExpenses] = useState<Expense[]>([
         { id: 1, title: "Groceries", amount: 50, category: "Food" },
         { id: 2, title: "Uber", amount: 20, category: "Travel" },
@@ -20,26 +20,22 @@ function App() {
         { id: 6, title: "Jacket", amount: 120, category: "Shopping" }
     ]);
 
-    // category filter
     const [selectedCategory, setSelectedCategory] = useState("All");
 
-    // adding an expense
+    // adding expense
     const addExpense = (expense: Expense) => {
-
         setExpenses((current) => [...current, expense]);
-
         setSelectedCategory("All");
     };
 
-    // deleting an expense
+    // delete expense
     const deleteExpense = (id: number) => {
-
         setExpenses((current) =>
             current.filter((e) => e.id !== id)
         );
     };
 
-    // updating an expense
+    // updating expense details
     const updateExpense = (id: number) => {
 
         const expense = expenses.find((e) => e.id === id);
@@ -83,13 +79,13 @@ function App() {
         );
     };
 
-    // calculating total
+    // getting total amount
     const total = expenses.reduce(
         (sum, e) => sum + e.amount,
         0
     );
 
-    // filtering expenses
+    // filtering based on category
     const filteredExpenses =
         selectedCategory === "All"
             ? expenses
@@ -104,67 +100,128 @@ function App() {
 
             <p>Starting React with TypeScript</p>
 
-            <Clock />
+            {/* links to different pages */}
 
-            <UserList />
+            <nav style={{ margin: "20px", display: "flex", gap: "20px", justifyContent: "center" }}>
 
-            <hr />
+                <Link to="/">Home</Link>
 
-            <ExpenseForm onAdd={addExpense} />
+                <Link to="/users">Users</Link>
 
-            <hr />
+                <Link to="/expenses">Expenses</Link>
 
-            <h2>Total Expenses: ${total.toFixed(2)}</h2>
+            </nav>
 
-            <h2>My Expenses</h2>
+            {/* showing page based on url */}
 
-            <div>
-                {["All", "Food", "Travel", "Shopping", "Rent"].map(
-                    (category) => (
-                        <button
-                            key={category}
-                            onClick={() => setSelectedCategory(category)}
-                            style={{
-                                backgroundColor:
-                                    selectedCategory === category
-                                        ? "lightblue"
-                                        : "white"
-                            }}
-                        >
-                            {category}
-                        </button>
-                    )
-                )}
-            </div>
+            <Routes>
 
-            {filteredExpenses.length === 0 ? (
+                <Route
+                    path="/"
+                    element={
+                        <div>
 
-                <p>
-                    {expenses.length === 0
-                        ? "No expenses yet 🎉"
-                        : "No expenses in this category"}
-                </p>
+                            <h2>Home</h2>
 
-            ) : (
+                            <p>Welcome to my Expense Tracker</p>
 
-                filteredExpenses.map((e) => (
-                    <ExpenseCard
-                        key={e.id}
-                        id={e.id}
-                        title={e.title}
-                        amount={e.amount}
-                        category={e.category}
-                        note={e.note}
-                        onUpdate={updateExpense}
-                        onDelete={deleteExpense}
-                    />
-                ))
+                            <p>
+                                This is my React practice project.
+                            </p>
 
-            )}
+                            <Clock />
 
-            <hr />
+                            <Counter />
 
-            <Counter />
+                        </div>
+                    }
+                />
+
+                <Route
+                    path="/users"
+                    element={
+                        <div>
+
+                            <UserList />
+
+                        </div>
+                    }
+                />
+
+                <Route
+                    path="/expenses"
+                    element={
+                        <div>
+
+                            <ExpenseForm onAdd={addExpense} />
+
+                            <hr />
+
+                            <h2>Total Expenses: ${total.toFixed(2)}</h2>
+
+                            <h2>My Expenses</h2>
+
+                            <div>
+
+                                {["All", "Food", "Travel", "Shopping", "Rent"].map(
+                                    (category) => (
+                                        <button
+                                            key={category}
+                                            onClick={() => setSelectedCategory(category)}
+                                            style={{
+                                                backgroundColor:
+                                                    selectedCategory === category
+                                                        ? "lightblue"
+                                                        : "white"
+                                            }}
+                                        >
+                                            {category}
+                                        </button>
+                                    )
+                                )}
+
+                            </div>
+
+                            {filteredExpenses.length === 0 ? (
+
+                                <p>
+                                    {expenses.length === 0
+                                        ? "No expenses yet 🎉"
+                                        : "No expenses in this category"}
+                                </p>
+
+                            ) : (
+
+                                filteredExpenses.map((e) => (
+                                    <ExpenseCard
+                                        key={e.id}
+                                        id={e.id}
+                                        title={e.title}
+                                        amount={e.amount}
+                                        category={e.category}
+                                        note={e.note}
+                                        onUpdate={updateExpense}
+                                        onDelete={deleteExpense}
+                                    />
+                                ))
+
+                            )}
+
+                        </div>
+                    }
+                />
+
+                <Route
+                    path="*"
+                    element={
+                        <div>
+                            <h2>Page not found</h2>
+                            <Link to="/">Go back home</Link>
+                        </div>
+                    }
+                />
+
+            </Routes>
 
         </div>
     );

@@ -8,6 +8,7 @@ import ExpenseForm from "./components/ExpenseForm";
 import Counter from "./components/Counter";
 import UserList from "./components/UserList";
 import Clock from "./components/Clock";
+import TaskManager from "./components/TaskManager";
 import useLocalStorage from "./hooks/useLocalStorage";
 
 const initialExpenses: Expense[] = [
@@ -21,7 +22,6 @@ const initialExpenses: Expense[] = [
 
 function App() {
 
-    // storing expenses in browser
     const [expenses, setExpenses] = useLocalStorage<Expense[]>(
         "expense-tracker-data",
         initialExpenses
@@ -29,11 +29,10 @@ function App() {
 
     const [selectedCategory, setSelectedCategory] = useState("All");
 
-    // adding new expense
+    // adding expense
     const addExpense = (expense: Expense) => {
 
         setExpenses((current) => [...current, expense]);
-
         setSelectedCategory("All");
     };
 
@@ -89,13 +88,12 @@ function App() {
         );
     };
 
-    // total of all expenses
+    // calculating total
     const total = expenses.reduce(
         (sum, e) => sum + e.amount,
         0
     );
 
-    // category filter
     const filteredExpenses =
         selectedCategory === "All"
             ? expenses
@@ -122,6 +120,8 @@ function App() {
                 <Link to="/users">Users</Link>
 
                 <Link to="/expenses">Expenses</Link>
+
+                <Link to="/tasks">Tasks</Link>
 
             </nav>
 
@@ -150,9 +150,7 @@ function App() {
                     path="/users"
                     element={
                         <div>
-
                             <UserList />
-
                         </div>
                     }
                 />
@@ -216,6 +214,15 @@ function App() {
 
                             )}
 
+                        </div>
+                    }
+                />
+
+                <Route
+                    path="/tasks"
+                    element={
+                        <div>
+                            <TaskManager />
                         </div>
                     }
                 />

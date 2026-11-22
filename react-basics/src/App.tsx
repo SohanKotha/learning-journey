@@ -3,12 +3,14 @@ import type { Expense } from "./type";
 
 import Header from "./components/Header";
 import ExpenseCard from "./components/ExpenseCard";
+import ExpenseForm from "./components/ExpenseForm";
 import Counter from "./components/Counter";
 import UserList from "./components/UserList";
 import Clock from "./components/Clock";
 
 function App() {
 
+    // expenses data
     const [expenses, setExpenses] = useState<Expense[]>([
         { id: 1, title: "Groceries", amount: 50, category: "Food" },
         { id: 2, title: "Uber", amount: 20, category: "Travel" },
@@ -18,16 +20,26 @@ function App() {
         { id: 6, title: "Jacket", amount: 120, category: "Shopping" }
     ]);
 
+    // category filter
     const [selectedCategory, setSelectedCategory] = useState("All");
 
-    // removing expense
+    // adding an expense
+    const addExpense = (expense: Expense) => {
+
+        setExpenses((current) => [...current, expense]);
+
+        setSelectedCategory("All");
+    };
+
+    // deleting an expense
     const deleteExpense = (id: number) => {
+
         setExpenses((current) =>
             current.filter((e) => e.id !== id)
         );
     };
 
-    // updating expense
+    // updating an expense
     const updateExpense = (id: number) => {
 
         const expense = expenses.find((e) => e.id === id);
@@ -36,15 +48,24 @@ function App() {
 
         const newTitle = prompt("Enter expense name:", expense.title);
 
-        if (newTitle === null || newTitle.trim() === "") return;
+        if (newTitle === null || newTitle.trim() === "") {
+            return;
+        }
 
-        const amountInput = prompt("Enter amount:", String(expense.amount));
+        const amountInput = prompt(
+            "Enter amount:",
+            String(expense.amount)
+        );
 
         if (amountInput === null) return;
 
         const newAmount = Number(amountInput);
 
-        if (amountInput.trim() === "" || !Number.isFinite(newAmount) || newAmount < 0) {
+        if (
+            amountInput.trim() === "" ||
+            !Number.isFinite(newAmount) ||
+            newAmount < 0
+        ) {
             alert("Please enter a valid amount");
             return;
         }
@@ -52,22 +73,33 @@ function App() {
         setExpenses((current) =>
             current.map((e) =>
                 e.id === id
-                    ? { ...e, title: newTitle.trim(), amount: newAmount }
+                    ? {
+                        ...e,
+                        title: newTitle.trim(),
+                        amount: newAmount
+                    }
                     : e
             )
         );
     };
 
-    // total expenses
-    const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+    // calculating total
+    const total = expenses.reduce(
+        (sum, e) => sum + e.amount,
+        0
+    );
 
-    // filtering categories
-    const filteredExpenses = selectedCategory === "All"
-        ? expenses
-        : expenses.filter((e) => e.category === selectedCategory);
+    // filtering expenses
+    const filteredExpenses =
+        selectedCategory === "All"
+            ? expenses
+            : expenses.filter(
+                (e) => e.category === selectedCategory
+            );
 
     return (
         <div>
+
             <Header title="My Expense Tracker" />
 
             <p>Starting React with TypeScript</p>
@@ -76,33 +108,45 @@ function App() {
 
             <UserList />
 
-            <h2>Total Expenses: ${total}</h2>
+            <hr />
+
+            <ExpenseForm onAdd={addExpense} />
+
+            <hr />
+
+            <h2>Total Expenses: ${total.toFixed(2)}</h2>
+
+            <h2>My Expenses</h2>
 
             <div>
-                <button onClick={() => setSelectedCategory("All")}>
-                    All
-                </button>
-
-                <button onClick={() => setSelectedCategory("Food")}>
-                    Food
-                </button>
-
-                <button onClick={() => setSelectedCategory("Travel")}>
-                    Travel
-                </button>
-
-                <button onClick={() => setSelectedCategory("Shopping")}>
-                    Shopping
-                </button>
+                {["All", "Food", "Travel", "Shopping", "Rent"].map(
+                    (category) => (
+                        <button
+                            key={category}
+                            onClick={() => setSelectedCategory(category)}
+                            style={{
+                                backgroundColor:
+                                    selectedCategory === category
+                                        ? "lightblue"
+                                        : "white"
+                            }}
+                        >
+                            {category}
+                        </button>
+                    )
+                )}
             </div>
 
             {filteredExpenses.length === 0 ? (
+
                 <p>
                     {expenses.length === 0
                         ? "No expenses yet 🎉"
                         : "No expenses in this category"}
                 </p>
+
             ) : (
+
                 filteredExpenses.map((e) => (
                     <ExpenseCard
                         key={e.id}
@@ -115,9 +159,13 @@ function App() {
                         onDelete={deleteExpense}
                     />
                 ))
+
             )}
 
+            <hr />
+
             <Counter />
+
         </div>
     );
 }

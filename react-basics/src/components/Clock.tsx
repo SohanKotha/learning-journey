@@ -1,22 +1,8 @@
-import { useEffect, useState } from "react";
+import useClock from "../hooks/useClock";
 
 function Clock() {
 
-    const [time, setTime] = useState(new Date());
-
-    useEffect(() => {
-
-        // updating time every second
-        const timer = setInterval(() => {
-            setTime(new Date());
-        }, 1000);
-
-        // stopping timer when component is removed
-        return () => {
-            clearInterval(timer);
-        };
-
-    }, []);
+    const time = useClock();
 
     return (
         <div>

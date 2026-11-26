@@ -2,16 +2,36 @@
 using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// allowing react to call our api
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("ReactApp", policy =>
+        policy.WithOrigins(
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod());
+});
+
 var app = builder.Build();
 
-// adding some tasks
+app.UseCors("ReactApp");
+
+// storing tasks
 var tasks = new List<TaskItem>
 {
     new(1, "Learn C#", "Sohan", true),
     new(2, "Build Web API", "Sohan", false)
 };
 
-// getting all tasks and filtering
+// next id for new tasks
+int nextId = 3;
+
+// getting tasks
 app.MapGet("/tasks", (bool? completed) =>
 {
     var filtered = completed.HasValue
@@ -21,7 +41,7 @@ app.MapGet("/tasks", (bool? completed) =>
     return Results.Ok(filtered);
 });
 
-// counting tasks by employee
+// grouping by employee
 app.MapGet("/tasks/summary", () =>
 {
     var summary = tasks
@@ -36,15 +56,13 @@ app.MapGet("/tasks/summary", () =>
     return Results.Ok(summary);
 });
 
-// getting one task
+// getting task by id
 app.MapGet("/tasks/{id:int}", (int id) =>
 {
     var task = tasks.FirstOrDefault(t => t.Id == id);
 
     if (task == null)
-    {
         return Results.NotFound();
-    }
 
     return Results.Ok(task);
 });
@@ -58,14 +76,15 @@ app.MapPost("/tasks", (TaskItem newTask) =>
         return Results.BadRequest("Task and employee name are required");
     }
 
-    if (newTask.Id <= 0 || tasks.Any(t => t.Id == newTask.Id))
+    // backend gives the task its id
+    var savedTask = newTask with
     {
-        return Results.BadRequest("Enter a valid and unique task ID");
-    }
+        Id = nextId++
+    };
 
-    tasks.Add(newTask);
+    tasks.Add(savedTask);
 
-    return Results.Created($"/tasks/{newTask.Id}", newTask);
+    return Results.Created($"/tasks/{savedTask.Id}", savedTask);
 });
 
 // updating task
@@ -74,9 +93,7 @@ app.MapPut("/tasks/{id:int}", (int id, TaskItem updatedTask) =>
     int index = tasks.FindIndex(t => t.Id == id);
 
     if (index == -1)
-    {
         return Results.NotFound();
-    }
 
     if (string.IsNullOrWhiteSpace(updatedTask.Title) ||
         string.IsNullOrWhiteSpace(updatedTask.AssignedTo))
@@ -84,21 +101,18 @@ app.MapPut("/tasks/{id:int}", (int id, TaskItem updatedTask) =>
         return Results.BadRequest("Task and employee name are required");
     }
 
-    // keeping the id from the url
     tasks[index] = updatedTask with { Id = id };
 
     return Results.NoContent();
 });
 
-// marking task completed
+// completing task
 app.MapPatch("/tasks/{id:int}/complete", (int id) =>
 {
     int index = tasks.FindIndex(t => t.Id == id);
 
     if (index == -1)
-    {
         return Results.NotFound();
-    }
 
     tasks[index] = tasks[index] with
     {
@@ -114,9 +128,7 @@ app.MapDelete("/tasks/{id:int}", (int id) =>
     int index = tasks.FindIndex(t => t.Id == id);
 
     if (index == -1)
-    {
         return Results.NotFound();
-    }
 
     tasks.RemoveAt(index);
 
@@ -125,7 +137,7 @@ app.MapDelete("/tasks/{id:int}", (int id) =>
 
 app.Run();
 
-// storing task details
+// task details
 record TaskItem(
     int Id,
     string Title,

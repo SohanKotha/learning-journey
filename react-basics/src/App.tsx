@@ -9,6 +9,7 @@ import Counter from "./components/Counter";
 import UserList from "./components/UserList";
 import Clock from "./components/Clock";
 import TaskManager from "./components/TaskManager";
+import ApiTasks from "./pages/ApiTasks";
 import useLocalStorage from "./hooks/useLocalStorage";
 
 const initialExpenses: Expense[] = [
@@ -22,6 +23,7 @@ const initialExpenses: Expense[] = [
 
 function App() {
 
+    // storing expenses in local storage
     const [expenses, setExpenses] = useLocalStorage<Expense[]>(
         "expense-tracker-data",
         initialExpenses
@@ -31,22 +33,19 @@ function App() {
 
     // adding expense
     const addExpense = (expense: Expense) => {
-
         setExpenses((current) => [...current, expense]);
         setSelectedCategory("All");
     };
 
-    // removing expense
+    // deleting expense
     const deleteExpense = (id: number) => {
-
         setExpenses((current) =>
             current.filter((e) => e.id !== id)
         );
     };
 
-    // editing expense
+    // updating expense
     const updateExpense = (id: number) => {
-
         const expense = expenses.find((e) => e.id === id);
 
         if (!expense) return;
@@ -88,7 +87,7 @@ function App() {
         );
     };
 
-    // calculating total
+    // calculating total expenses
     const total = expenses.reduce(
         (sum, e) => sum + e.amount,
         0
@@ -103,102 +102,89 @@ function App() {
 
     return (
         <div>
-
             <Header title="My Expense Tracker" />
 
-            <p>Starting React with TypeScript</p>
+            <p>React with TypeScript</p>
 
             <nav style={{
                 margin: "20px",
                 display: "flex",
                 gap: "20px",
-                justifyContent: "center"
+                justifyContent: "center",
+                flexWrap: "wrap"
             }}>
-
                 <Link to="/">Home</Link>
-
                 <Link to="/users">Users</Link>
-
                 <Link to="/expenses">Expenses</Link>
-
-                <Link to="/tasks">Tasks</Link>
-
+                <Link to="/tasks">Local Tasks</Link>
+                <Link to="/api-tasks">API Tasks</Link>
             </nav>
 
             <Routes>
-
                 <Route
                     path="/"
                     element={
                         <div>
-
                             <h2>Home</h2>
-
                             <p>Welcome to my Expense Tracker</p>
-
                             <p>This is my React practice project.</p>
-
                             <Clock />
-
                             <Counter />
-
                         </div>
                     }
                 />
 
                 <Route
                     path="/users"
-                    element={
-                        <div>
-                            <UserList />
-                        </div>
-                    }
+                    element={<UserList />}
                 />
 
                 <Route
                     path="/expenses"
                     element={
                         <div>
-
                             <ExpenseForm onAdd={addExpense} />
 
                             <hr />
 
-                            <h2>Total Expenses: ${total.toFixed(2)}</h2>
+                            <h2>
+                                Total Expenses: ${total.toFixed(2)}
+                            </h2>
 
                             <h2>My Expenses</h2>
 
                             <div>
-
-                                {["All", "Food", "Travel", "Shopping", "Rent"].map(
-                                    (category) => (
-                                        <button
-                                            key={category}
-                                            onClick={() => setSelectedCategory(category)}
-                                            style={{
-                                                backgroundColor:
-                                                    selectedCategory === category
-                                                        ? "lightblue"
-                                                        : "white"
-                                            }}
-                                        >
-                                            {category}
-                                        </button>
-                                    )
-                                )}
-
+                                {[
+                                    "All",
+                                    "Food",
+                                    "Travel",
+                                    "Shopping",
+                                    "Rent"
+                                ].map((category) => (
+                                    <button
+                                        key={category}
+                                        onClick={() =>
+                                            setSelectedCategory(category)
+                                        }
+                                        style={{
+                                            backgroundColor:
+                                                selectedCategory === category
+                                                    ? "lightblue"
+                                                    : "white"
+                                        }}
+                                    >
+                                        {category}
+                                    </button>
+                                ))}
                             </div>
 
                             {filteredExpenses.length === 0 ? (
-
                                 <p>
                                     {expenses.length === 0
-                                        ? "No expenses yet 🎉"
+                                        ? "No expenses yet"
                                         : "No expenses in this category"}
                                 </p>
-
                             ) : (
-
                                 filteredExpenses.map((e) => (
                                     <ExpenseCard
                                         key={e.id}
@@ -211,20 +197,19 @@ function App() {
                                         onDelete={deleteExpense}
                                     />
                                 ))
-
                             )}
-
                         </div>
                     }
                 />
 
                 <Route
                     path="/tasks"
-                    element={
-                        <div>
-                            <TaskManager />
-                        </div>
-                    }
+                    element={<TaskManager />}
+                />
+
+                <Route
+                    path="/api-tasks"
+                    element={<ApiTasks />}
                 />
 
                 <Route
@@ -236,9 +221,7 @@ function App() {
                         </div>
                     }
                 />
-
             </Routes>
-
         </div>
     );
 }

@@ -1,9 +1,10 @@
-
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using TaskApi.Data;
+using TaskApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// allowing react to call our api
+// allowing react
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ReactApp", policy =>
@@ -17,49 +18,53 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod());
 });
 
+// connecting sql server
+builder.Services.AddDbContext<TaskDbContext>(options =>
+{
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("TaskDb")
+    );
+});
+
 var app = builder.Build();
 
 app.UseCors("ReactApp");
 
-// storing tasks
-var tasks = new List<TaskItem>
-{
-    new(1, "Learn C#", "Sohan", true),
-    new(2, "Build Web API", "Sohan", false)
-};
-
-// next id for new tasks
-int nextId = 3;
-
 // getting tasks
-app.MapGet("/tasks", (bool? completed) =>
+app.MapGet("/tasks", async (bool? completed, TaskDbContext db) =>
 {
-    var filtered = completed.HasValue
-        ? tasks.Where(t => t.Completed == completed.Value).ToList()
-        : tasks.ToList();
+    var query = db.Tasks.AsNoTracking().AsQueryable();
 
-    return Results.Ok(filtered);
+    if (completed.HasValue)
+    {
+        query = query.Where(t => t.Completed == completed.Value);
+    }
+
+    var tasks = await query.OrderBy(t => t.Id).ToListAsync();
+
+    return Results.Ok(tasks);
 });
 
-// grouping by employee
-app.MapGet("/tasks/summary", () =>
+// summary by employee
+app.MapGet("/tasks/summary", async (TaskDbContext db) =>
 {
-    var summary = tasks
+    var summary = await db.Tasks
+        .AsNoTracking()
         .GroupBy(t => t.AssignedTo)
         .Select(group => new
         {
             AssignedTo = group.Key,
             Count = group.Count()
         })
-        .ToList();
+        .ToListAsync();
 
     return Results.Ok(summary);
 });
 
-// getting task by id
-app.MapGet("/tasks/{id:int}", (int id) =>
+// getting one task
+app.MapGet("/tasks/{id:int}", async (int id, TaskDbContext db) =>
 {
-    var task = tasks.FirstOrDefault(t => t.Id == id);
+    var task = await db.Tasks.FindAsync(id);
 
     if (task == null)
         return Results.NotFound();
@@ -68,79 +73,92 @@ app.MapGet("/tasks/{id:int}", (int id) =>
 });
 
 // adding task
-app.MapPost("/tasks", (TaskItem newTask) =>
+app.MapPost("/tasks", async (TaskItem newTask, TaskDbContext db) =>
 {
     if (string.IsNullOrWhiteSpace(newTask.Title) ||
         string.IsNullOrWhiteSpace(newTask.AssignedTo))
     {
-        return Results.BadRequest("Task and employee name are required");
+        return Results.BadRequest("Enter task and employee name");
     }
 
-    // backend gives the task its id
-    var savedTask = newTask with
+    if (newTask.Title.Length > 200 ||
+        newTask.AssignedTo.Length > 100)
     {
-        Id = nextId++
-    };
+        return Results.BadRequest("Task or employee name is too long");
+    }
 
-    tasks.Add(savedTask);
+    // sql server generates the id
+    newTask.Id = 0;
 
-    return Results.Created($"/tasks/{savedTask.Id}", savedTask);
+    db.Tasks.Add(newTask);
+    await db.SaveChangesAsync();
+
+    return Results.Created($"/tasks/{newTask.Id}", newTask);
 });
 
 // updating task
-app.MapPut("/tasks/{id:int}", (int id, TaskItem updatedTask) =>
+app.MapPut("/tasks/{id:int}", async (
+    int id,
+    TaskItem updatedTask,
+    TaskDbContext db) =>
 {
-    int index = tasks.FindIndex(t => t.Id == id);
+    var task = await db.Tasks.FindAsync(id);
 
-    if (index == -1)
+    if (task == null)
         return Results.NotFound();
 
     if (string.IsNullOrWhiteSpace(updatedTask.Title) ||
         string.IsNullOrWhiteSpace(updatedTask.AssignedTo))
     {
-        return Results.BadRequest("Task and employee name are required");
+        return Results.BadRequest("Enter task and employee name");
     }
 
-    tasks[index] = updatedTask with { Id = id };
+    if (updatedTask.Title.Length > 200 ||
+        updatedTask.AssignedTo.Length > 100)
+    {
+        return Results.BadRequest("Task or employee name is too long");
+    }
+
+    task.Title = updatedTask.Title;
+    task.AssignedTo = updatedTask.AssignedTo;
+    task.Completed = updatedTask.Completed;
+
+    await db.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
 // completing task
-app.MapPatch("/tasks/{id:int}/complete", (int id) =>
+app.MapPatch("/tasks/{id:int}/complete", async (
+    int id,
+    TaskDbContext db) =>
 {
-    int index = tasks.FindIndex(t => t.Id == id);
+    var task = await db.Tasks.FindAsync(id);
 
-    if (index == -1)
+    if (task == null)
         return Results.NotFound();
 
-    tasks[index] = tasks[index] with
-    {
-        Completed = true
-    };
+    task.Completed = true;
+
+    await db.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
 // deleting task
-app.MapDelete("/tasks/{id:int}", (int id) =>
+app.MapDelete("/tasks/{id:int}", async (
+    int id,
+    TaskDbContext db) =>
 {
-    int index = tasks.FindIndex(t => t.Id == id);
+    var task = await db.Tasks.FindAsync(id);
 
-    if (index == -1)
+    if (task == null)
         return Results.NotFound();
 
-    tasks.RemoveAt(index);
+    db.Tasks.Remove(task);
+    await db.SaveChangesAsync();
 
     return Results.NoContent();
 });
 
 app.Run();
-
-// task details
-record TaskItem(
-    int Id,
-    string Title,
-    string AssignedTo,
-    bool Completed
-);
